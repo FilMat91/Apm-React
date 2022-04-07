@@ -15,6 +15,15 @@
 .env.development.local
 .env.test.local
 .env.production.local
+*.iml
+.gradle
+/local.properties
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/build
+/captures
+.externalNativeBuild
 
 npm-debug.log*
 yarn-debug.log*
