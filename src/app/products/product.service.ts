@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
-import {catchError, combineLatest, map, Observable, tap, throwError} from 'rxjs';
+import {BehaviorSubject, catchError, combineLatest, map, Observable, tap, throwError} from 'rxjs';
 
 import { Product } from './product';
 import {ProductCategoryService} from "../product-categories/product-category.service";
@@ -44,29 +44,35 @@ export class ProductService {
               })))
       )
 
-    selectedProduct$ = this.productsWithCategory$
+    private productSelectedSubject = new BehaviorSubject<number>(0);
+    productSelectedAction$ = this.productSelectedSubject.asObservable();
+
+    selectedProduct$ = combineLatest([this.productSelectedAction$,this.productsWithCategory$])
         .pipe(
-            map(products =>
-            products.find(prod => prod.id == 5))
+            map(([selectedProductId, products]) =>
+                products.find(prod => prod.id === selectedProductId)),
+            tap(prod => console.log("selectProd", prod))
         )
   
   constructor(private http: HttpClient,
               private productCategoryService: ProductCategoryService) { }
+      public selectedProductChange(productId: number){
+        this.productSelectedSubject.next(productId);
+      }
+      private fakeProduct(): Product {
+        return {
+          id: 42,
+          productName: 'Another One',
+          productCode: 'TBX-0042',
+          description: 'Our new product',
+          price: 8.9,
+          categoryId: 3,
+          // category: 'Toolbox',
+          quantityInStock: 30
+        };
+      }
 
-  private fakeProduct(): Product {
-    return {
-      id: 42,
-      productName: 'Another One',
-      productCode: 'TBX-0042',
-      description: 'Our new product',
-      price: 8.9,
-      categoryId: 3,
-      // category: 'Toolbox',
-      quantityInStock: 30
-    };
-  }
-
-  private handleError(err: HttpErrorResponse): Observable<never> {
+      private handleError(err: HttpErrorResponse): Observable<never> {
     // in a real world app, we may send the server to some remote logging infrastructure
     // instead of just logging it to the console
     let errorMessage: string;
