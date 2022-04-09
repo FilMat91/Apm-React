@@ -37,8 +37,6 @@ export class ProductListComponent {
           })
       );
 
-
-
 /*  productSimpleFilter$ = this.productService.productsWithCategory$
       .pipe(
           map(products => products.filter(product => product.categoryId? product.categoryId === this.selectedCategoryId : true))

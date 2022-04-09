@@ -1,13 +1,40 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
-import { throwError, Observable } from 'rxjs';
+import {throwError, Observable, of, map, concatMap, mergeMap, switchMap, shareReplay, catchError} from 'rxjs';
+import {Supplier} from "./supplier";
 
 @Injectable({
   providedIn: 'root'
 })
 export class SupplierService {
   suppliersUrl = 'api/suppliers';
+
+  supplierWithMap$ = of(1 , 5, 8)
+        .pipe(
+            map(id => this.http.get<Supplier>(this.suppliersUrl + "/" + id))
+        )
+
+  supplierWithConcatMap$ = of(1 , 5, 8) //NOT MERGE RESULTS BUT TRANSFORM 1 AT TIME
+      .pipe(
+          concatMap(id => this.http.get<Supplier>(this.suppliersUrl + "/" + id))
+      )
+
+  supplierWithMergeMap$ = of(1 , 5, 8) // MERGE RESULTS OF OBSERVABLE WITH NO SPECIFIC ORDER
+      .pipe(
+          mergeMap(id => this.http.get<Supplier>(this.suppliersUrl + "/" + id))
+      )
+
+  supplierWithSwitchMap$ = of(1 , 5, 8) // TAKE ONLY THE LAST RESULT IF NOT TERMINATED
+      .pipe(
+          switchMap(id => this.http.get<Supplier>(this.suppliersUrl + "/" + id))
+      )
+
+  suppliers$ = this.http.get<Supplier[]>(this.suppliersUrl)
+      .pipe(
+          shareReplay(1),
+          catchError(this.handleError)
+      )
 
   constructor(private http: HttpClient) { }
 

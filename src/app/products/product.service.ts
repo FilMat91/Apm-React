@@ -1,10 +1,24 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
-import {BehaviorSubject, catchError, combineLatest, map, merge, Observable, scan, Subject, tap, throwError} from 'rxjs';
+import {
+    BehaviorSubject,
+    catchError,
+    combineLatest, filter, forkJoin,
+    map,
+    merge,
+    Observable, of,
+    scan,
+    shareReplay,
+    Subject, switchMap,
+    tap,
+    throwError
+} from 'rxjs';
 
 import { Product } from './product';
 import {ProductCategoryService} from "../product-categories/product-category.service";
+import {SupplierService} from "../suppliers/supplier.service";
+import {Supplier} from "../suppliers/supplier";
 
 @Injectable({
   providedIn: 'root'
@@ -41,7 +55,8 @@ export class ProductService {
                 price: product.price?product.price * 1.5 : 0,
                 category : categories.find(category => category.id == product.categoryId)?.name,
                 searchKey: [product.productName]
-              })))
+              }))),
+          shareReplay(1)
       )
 
     private productSelectedSubject = new BehaviorSubject<number>(0);
@@ -51,7 +66,8 @@ export class ProductService {
         .pipe(
             map(([selectedProductId, products]) =>
                 products.find(prod => prod.id === selectedProductId)),
-            tap(prod => console.log("selectProd", prod))
+            tap(prod => console.log("selectProd", prod)),
+            shareReplay(1)
         );
 
     private productInsertedSubject = new Subject<Product>();
@@ -61,9 +77,31 @@ export class ProductService {
         .pipe(
             scan((acc, value) => (value instanceof Array)?[...value]:[...acc,value],[] as Product[])
         )
+
+/*    selectProductSuppliers$ = combineLatest(this.selectedProduct$, this.supplierService.suppliers$)
+        .pipe(
+            map(([selectedProduct, suppliers]) =>
+                suppliers.filter(supplier => selectedProduct?.supplierIds?.includes(supplier.id))
+            ),
+            shareReplay(1)
+        )*/
+
+    selectProductSuppliers$ = this.selectedProduct$
+        .pipe(
+            filter(product => Boolean(product)),
+            switchMap(selectedProduct => {
+                if(selectedProduct?.supplierIds){
+                    return forkJoin(selectedProduct.supplierIds.map(supplierId => this.http.get<Supplier>(this.suppliersUrl + "/" + supplierId)))
+                }
+                else
+                {
+                    return of([]);
+                }
+            }))
   
   constructor(private http: HttpClient,
-              private productCategoryService: ProductCategoryService) { }
+              private productCategoryService: ProductCategoryService,
+              private supplierService: SupplierService) { }
 
       public selectedProductChange(productId: number){
         this.productSelectedSubject.next(productId);
