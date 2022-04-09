@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component} from '@angular/core';
 
-import {catchError, EMPTY} from 'rxjs';
+import {catchError, EMPTY, Subject} from 'rxjs';
 import {ProductService} from '../product.service';
 
 @Component({
@@ -9,12 +9,15 @@ import {ProductService} from '../product.service';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductListAltComponent {
-  pageTitle = 'Products';
-  errorMessage = '';
 
-  products$ = this.productService.productsWithCategory$.pipe(
+    private errorMessage = new Subject<string>();
+    errorMessage$ = this.errorMessage.asObservable();
+
+  pageTitle = 'Products';
+
+  products$ = this.productService.productsWithAdd$.pipe(
       catchError(err => {
-        this.errorMessage = err;
+        this.errorMessage.next(err);
         return EMPTY;
       }))
 
