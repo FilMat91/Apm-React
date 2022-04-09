@@ -17,6 +17,7 @@
 .env.production.local
 *.iml
 .gradle
+/.angular/cache
 /local.properties
 /.idea
 /build
